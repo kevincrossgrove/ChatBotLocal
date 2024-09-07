@@ -13,19 +13,16 @@ from ollama import Client
 # Ollama must be running for this application to work
 # ollama run `model_name` starts a server at http://localhost:11434
 client = Client(host='http://localhost:11434')
-messages = []
+
+# Set model here!
+model='llama3.1'
 
 # Set page title
 st.set_page_config(page_title="Local Chat Bot")
 
 # Chatting with Ollama Server
-def chat_with_ai(prompt):
-    message = {'role': 'user', 'content': prompt}
-
-    # Provides the AI with full conversation history as the context
-    messages.append(message)
-
-    stream = client.chat( model='llama3.1', messages=messages, stream=True)
+def chat_with_ai(messages):
+    stream = client.chat( model=model, messages=messages, stream=True)
 
     for chunk in stream:
         yield chunk['message']['content']
@@ -46,8 +43,6 @@ st.markdown("""
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
-else:
-    messages = st.session_state.messages
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
@@ -60,12 +55,13 @@ if prompt := st.chat_input("Ask me anything..."):
     # Display user message in chat message container
     with st.chat_message("user"):
          st.markdown(prompt)
+
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
-        response = st.write_stream(chat_with_ai(prompt))
+        response = st.write_stream(chat_with_ai(st.session_state.messages))
 
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})
